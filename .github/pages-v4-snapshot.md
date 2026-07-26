@@ -24,6 +24,12 @@ git -c core.autocrlf=false -c core.eol=lf archive `
   697b9a4bd790b3572bb8b4278e45c0b7e633f8de:v4
 ```
 
+After validating the archive checksum, `AddFrozenV4Website.ps1` corrects six
+hard-coded `mapsui.com` URLs that predate the `/v4` prefix. These corrections
+keep the frozen landing page, documentation, samples, and displayed sample code
+within `/v4`; they do not rebuild v4. The assembly validation also rejects the
+legacy root directories `/documentation`, `/samples`, and `/api`.
+
 Replacing the snapshot is an exceptional migration operation. A replacement
 must be reviewed, published under a new release tag, and accompanied by an
 updated manifest.

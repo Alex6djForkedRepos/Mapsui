@@ -21,13 +21,11 @@ on:
       - 'Scripts/AddFrozenV4Website.ps1'
       - '.github/pages-v4-snapshot.*'
       - '.github/workflows/dotnet-docs.yml'
-  workflow_dispatch: {}
-
 permissions:
   contents: read
 
 concurrency:
-  group: mapsui-pages
+  group: mapsui-pages-${{ github.ref }}
   cancel-in-progress: true
 
 jobs:
@@ -98,7 +96,7 @@ jobs:
         path: ./website
 
   deploy-website:
-    if: github.event_name != 'pull_request'
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
     needs: build-website
     runs-on: ubuntu-latest
     permissions:

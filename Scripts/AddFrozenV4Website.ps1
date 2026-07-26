@@ -53,6 +53,52 @@ if ($LASTEXITCODE -ne 0) {
     throw "Could not extract the frozen v4 archive."
 }
 
+$linkCorrections = @(
+    @{
+        Path = "index.html"
+        Old = "https://mapsui.com/documentation/home.html"
+        New = "https://mapsui.com/v4/documentation/home.html"
+    },
+    @{
+        Path = "index.html"
+        Old = "https://mapsui.com/api/index.html"
+        New = "https://mapsui.com/v4/api/index.html"
+    },
+    @{
+        Path = "index.html"
+        Old = "https://mapsui.com/samples/"
+        New = "https://mapsui.com/v4/samples/"
+    },
+    @{
+        Path = "documentation/samples.html"
+        Old = "https://mapsui.com/samples/"
+        New = "https://mapsui.com/v4/samples/"
+    },
+    @{
+        Path = "codesamples/HyperlinkSample.html"
+        Old = "https://mapsui.com/documentation/faq.html"
+        New = "https://mapsui.com/v4/documentation/faq.html"
+    },
+    @{
+        Path = "index.json"
+        Old = "https://mapsui.com/documentation/faq.html"
+        New = "https://mapsui.com/v4/documentation/faq.html"
+    }
+)
+
+$utf8WithoutBom = [System.Text.UTF8Encoding]::new($false)
+foreach ($correction in $linkCorrections) {
+    $filePath = Join-Path $v4Path $correction.Path
+    $content = [System.IO.File]::ReadAllText($filePath)
+    $occurrenceCount = ([regex]::Matches($content, [regex]::Escape($correction.Old))).Count
+    if ($occurrenceCount -ne 1) {
+        throw "Expected exactly one occurrence of '$($correction.Old)' in v4/$($correction.Path), but found $occurrenceCount."
+    }
+
+    $correctedContent = $content.Replace($correction.Old, $correction.New)
+    [System.IO.File]::WriteAllText($filePath, $correctedContent, $utf8WithoutBom)
+}
+
 $actualFileCount = (Get-ChildItem -LiteralPath $v4Path -Recurse -File | Measure-Object).Count
 if ($actualFileCount -ne $ExpectedFileCount) {
     throw "Frozen v4 file count mismatch. Expected $ExpectedFileCount but found $actualFileCount."
@@ -64,4 +110,10 @@ foreach ($requiredFile in @("index.html", "samples/index.html", "api/index.html"
     }
 }
 
-Write-Output "Added the frozen v4 website ($actualFileCount files) to $v4Path"
+foreach ($removedRootDirectory in @("documentation", "samples", "api")) {
+    if (Test-Path -LiteralPath (Join-Path $resolvedWebsitePath $removedRootDirectory)) {
+        throw "Legacy root directory should not be published: $removedRootDirectory"
+    }
+}
+
+Write-Output "Added the frozen v4 website ($actualFileCount files, $($linkCorrections.Count) corrected links) to $v4Path"

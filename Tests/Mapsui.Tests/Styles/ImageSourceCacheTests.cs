@@ -90,7 +90,7 @@ public static class ImageSourceCacheTests
     public static async Task AddAndRemoveUriHttpsRegisterAsync()
     {
         // Arrange
-        Image image = "https://mapsui.com/images/logo.svg";
+        Image image = "https://mapsui.com/v5/images/logo.svg";
         var imageSourceCache = new ImageSourceCache();
         await imageSourceCache.TryRegisterAsync(image.SourceId, image.Source);
 
@@ -105,7 +105,7 @@ public static class ImageSourceCacheTests
     public static async Task AddUriHttpsRegisterAsync()
     {
         // Arrange
-        Image image = "https://mapsui.com/images/logo.svg";
+        Image image = "https://mapsui.com/v5/images/logo.svg";
         var imageSourceCache = new ImageSourceCache();
         await imageSourceCache.TryRegisterAsync(image.SourceId, image.Source);
 
