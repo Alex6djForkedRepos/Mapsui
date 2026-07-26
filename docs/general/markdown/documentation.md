@@ -10,7 +10,7 @@ description: How the Mapsui documentation is structured, built with MkDocs and D
 - We use *docfx* to generate the **api documentation**. The main configuration is in `./docs/api/docfx.json`. You can test it locally by running `docfx --serve` in that folder. The api docs are published to the `./docs/api/_site` folder.
 - The powershell script `./Scripts/BuildDocumentationWebSite.ps1` runs both mkdocs and docfx and copies both to the `./website` folder.
 - The Mapsui project on GitHub is configured to publish the `./website` folder to GitHub Pages at https://mapsui.com.
-- A pushed documentation commit on `main` triggers the `dotnet-docs.yml` GitHub Action. It builds the v5 documentation and samples, adds the frozen v4 website, and deploys one complete GitHub Pages artifact.
+- A documentation pull request merged into `main` triggers the `dotnet-docs.yml` GitHub Action. It builds the v5 documentation and samples, adds the frozen v4 website, and deploys one complete GitHub Pages artifact. Direct pushes do not deploy the website.
 - The v4 website is not rebuilt. It is the immutable release asset described by `.github/pages-v4-snapshot.json`. `Scripts/AddFrozenV4Website.ps1` verifies the asset checksum before adding it to `./website/v4`.
 
 ## Documentation setup guidelines

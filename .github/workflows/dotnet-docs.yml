@@ -95,9 +95,34 @@ jobs:
       with:
         path: ./website
 
-  deploy-website:
+  verify-deployment-source:
     if: github.event_name == 'push' && github.ref == 'refs/heads/main'
-    needs: build-website
+    runs-on: ubuntu-latest
+    outputs:
+      should_deploy: ${{ steps.merged-pull-request.outputs.should_deploy }}
+    steps:
+    - name: Require a pull request merged into main
+      id: merged-pull-request
+      env:
+        GH_TOKEN: ${{ github.token }}
+      shell: bash
+      run: |
+        merged_pull_requests="$(
+          gh api "repos/$GITHUB_REPOSITORY/commits/$GITHUB_SHA/pulls" \
+            --jq '[.[] | select(.merged_at != null and .base.ref == "main")] | length'
+        )"
+        if [[ "$merged_pull_requests" -gt 0 ]]; then
+          echo "should_deploy=true" >> "$GITHUB_OUTPUT"
+        else
+          echo "should_deploy=false" >> "$GITHUB_OUTPUT"
+          echo "Skipping deployment because $GITHUB_SHA was not merged through a pull request into main."
+        fi
+
+  deploy-website:
+    if: needs.verify-deployment-source.outputs.should_deploy == 'true'
+    needs:
+      - build-website
+      - verify-deployment-source
     runs-on: ubuntu-latest
     permissions:
       pages: write
