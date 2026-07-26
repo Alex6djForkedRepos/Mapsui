@@ -1,5 +1,6 @@
 {
   "releaseTag": "pages-v4-frozen-2026-07-26",
+  "releaseTagCommit": "d2d770919dd1b84b0f594fa7a8d23adf5efd3916",
   "assetName": "mapsui-v4-site.tar.gz",
   "sourceRef": "gh-pages:v4",
   "sourceCommit": "697b9a4bd790b3572bb8b4278e45c0b7e633f8de",

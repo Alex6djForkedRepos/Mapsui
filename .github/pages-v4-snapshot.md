@@ -8,6 +8,11 @@ The release, source commit, checksum, and expected file count are pinned in
 `pages-v4-snapshot.json`. The source commit is the last verified `gh-pages`
 deployment before the migration to native GitHub Pages artifacts.
 
+The release tag intentionally points to a parentless, empty metadata commit,
+not to a commit in `main`. This prevents the infrastructure tag from being
+selected by Git-based package-version calculation. Keep future frozen-site
+release tags outside the `main` history for the same reason.
+
 The snapshot was created with Git checkout conversion disabled so its contents
 match the blobs published by GitHub:
 
