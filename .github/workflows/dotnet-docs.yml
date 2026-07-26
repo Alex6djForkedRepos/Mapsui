@@ -2,25 +2,34 @@ name: Build Website
 
 on:
   push:
-    branches:  
+    branches:
       - main
     paths:
       - 'docs/**'
+      - 'Scripts/BuildDocumentationWebSite.ps1'
+      - 'Scripts/BuildSamplesWebsite.ps1'
+      - 'Scripts/AddFrozenV4Website.ps1'
+      - '.github/pages-v4-snapshot.*'
+      - '.github/workflows/dotnet-docs.yml'
   pull_request:
     branches:
       - main
     paths:
       - 'docs/**'
-  workflow_dispatch: {}
-      
+      - 'Scripts/BuildDocumentationWebSite.ps1'
+      - 'Scripts/BuildSamplesWebsite.ps1'
+      - 'Scripts/AddFrozenV4Website.ps1'
+      - '.github/pages-v4-snapshot.*'
+      - '.github/workflows/dotnet-docs.yml'
 permissions:
-  contents: write
-  # Grant GITHUB_TOKEN the permissions required to make a Pages deployment
-  pages: write      # to deploy to Pages
-  id-token: write   # to verify the deployment originates from an appropriate source
+  contents: read
+
+concurrency:
+  group: mapsui-pages-${{ github.ref }}
+  cancel-in-progress: true
 
 jobs:
-  build-and-publish-website:
+  build-website:
     runs-on: windows-latest
     env:
       PYTHONUTF8: 1
@@ -61,29 +70,67 @@ jobs:
       # build blazor samples to website/samples/
     - name: Build Blazor Website Sample
       shell: pwsh
-      run: ./Scripts/BuildSamplesWebsite.ps1   
-    - name: Checkout gh-pages branch to delete v5 folder
-      uses: actions/checkout@v4
+      run: ./Scripts/BuildSamplesWebsite.ps1
+    - name: Download frozen v4 website
+      shell: pwsh
+      env:
+        GH_TOKEN: ${{ github.token }}
+      run: |
+        $manifest = Get-Content './.github/pages-v4-snapshot.json' | ConvertFrom-Json
+        $archivePath = Join-Path $env:RUNNER_TEMP $manifest.assetName
+        gh release download $manifest.releaseTag `
+          --repo $env:GITHUB_REPOSITORY `
+          --pattern $manifest.assetName `
+          --dir $env:RUNNER_TEMP
+        if ($LASTEXITCODE -ne 0) {
+          throw 'Could not download the frozen v4 website.'
+        }
+        ./Scripts/AddFrozenV4Website.ps1 `
+          -ArchivePath $archivePath `
+          -WebsitePath ./website `
+          -ExpectedSha256 $manifest.sha256 `
+          -ExpectedFileCount $manifest.fileCount
+    - name: Upload GitHub Pages artifact
+      uses: actions/upload-pages-artifact@v4
       with:
-        ref: gh-pages
-        path: gh-pages
-    - name: Delete v5 folder
+        path: ./website
+
+  verify-deployment-source:
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+    runs-on: ubuntu-latest
+    outputs:
+      should_deploy: ${{ steps.merged-pull-request.outputs.should_deploy }}
+    steps:
+    - name: Require a pull request merged into main
+      id: merged-pull-request
+      env:
+        GH_TOKEN: ${{ github.token }}
       shell: bash
       run: |
-        rm -rf gh-pages/v5
-    - name: Push gh-pages branch with v5 folder deleted
-      shell: bash
-      run: |
-        cd gh-pages
-        git config user.name "github-actions[bot]"
-        git config user.email "github-actions[bot]@users.noreply.github.com"
-        git add -A
-        git commit -m "Clean v5 folder before redeploy" || echo "Nothing to commit"
-        git push
-    - name: Upload artifact
-      uses: peaceiris/actions-gh-pages@v4
-      with:
-        github_token: ${{ secrets.GITHUB_TOKEN }}
-        publish_dir: ./website
-        destination_dir: .
-        keep_files: true
+        merged_pull_requests="$(
+          gh api "repos/$GITHUB_REPOSITORY/commits/$GITHUB_SHA/pulls" \
+            --jq '[.[] | select(.merged_at != null and .base.ref == "main")] | length'
+        )"
+        if [[ "$merged_pull_requests" -gt 0 ]]; then
+          echo "should_deploy=true" >> "$GITHUB_OUTPUT"
+        else
+          echo "should_deploy=false" >> "$GITHUB_OUTPUT"
+          echo "Skipping deployment because $GITHUB_SHA was not merged through a pull request into main."
+        fi
+
+  deploy-website:
+    if: needs.verify-deployment-source.outputs.should_deploy == 'true'
+    needs:
+      - build-website
+      - verify-deployment-source
+    runs-on: ubuntu-latest
+    permissions:
+      pages: write
+      id-token: write
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+    - name: Deploy GitHub Pages artifact
+      id: deployment
+      uses: actions/deploy-pages@v4

@@ -1,4 +1,5 @@
 site_name: Mapsui Documentation
+site_url: https://mapsui.com/v5/
 docs_dir: markdown
 site_dir: _site
 theme:

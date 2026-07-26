@@ -9,7 +9,7 @@ This page explains how the Mapsui sample system works, both for users who want t
 
 ## Finding and running samples
 
-All samples are available as a live Blazor demo at [mapsui.com/samples](https://mapsui.com/samples/). Each sample there has a **Source code** tab showing the relevant code.
+All samples are available as a live Blazor demo at [mapsui.com/v5/samples](https://mapsui.com/v5/samples/). Each sample there has a **Source code** tab showing the relevant code.
 
 To run samples locally, clone the repository and open the `.slnf` for your preferred UI framework (e.g. `Mapsui.Wpf.slnf`). Set `Mapsui.Samples.<YourFramework>` as the startup project and run it. The sample app lets you pick a category and then a specific sample.
 
